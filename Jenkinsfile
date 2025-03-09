@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        JAVA_HOME = '/Users/selma/java/temurin-11'
+        JAVA_HOME = '/Users/selma/java/temurin-11/Contents/Home'
         PATH = "${JAVA_HOME}/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}"
     }
     
@@ -24,15 +24,11 @@ pipeline {
                         rm -rf temurin-11
                         mv jdk-11.0.26+4 temurin-11
                         rm temurin11.tar.gz
-                        
-                        # Verify Java installation
-                        export JAVA_HOME="/Users/selma/java/temurin-11"
-                        export PATH="${JAVA_HOME}/bin:${PATH}"
                     fi
                     
                     # Print directory structure for debugging
                     echo "Java directory structure:"
-                    ls -R "${JAVA_HOME}"
+                    ls -la "${JAVA_HOME}/bin"
                     
                     # Install Maven if not present using Homebrew
                     if ! command -v mvn &> /dev/null; then
@@ -49,29 +45,20 @@ pipeline {
                     echo "PATH=${PATH}"
                     
                     echo "Java version:"
-                    which java || true
-                    java -version || true
+                    "${JAVA_HOME}/bin/java" -version
                     
                     echo "Maven version:"
-                    which mvn || true
-                    mvn -version || true
+                    JAVA_HOME="${JAVA_HOME}" mvn -version
                     
                     # Verify Java installation
-                    if [ ! -f "${JAVA_HOME}/bin/java" ]; then
-                        echo "Java binary not found at expected location: ${JAVA_HOME}/bin/java"
+                    if [ ! -x "${JAVA_HOME}/bin/java" ]; then
+                        echo "Java binary not found or not executable at: ${JAVA_HOME}/bin/java"
                         exit 1
                     fi
                     
-                    # Verify all required tools are available
-                    if ! command -v java &> /dev/null; then
-                        echo "Java is not available in PATH"
-                        echo "Current PATH: ${PATH}"
-                        exit 1
-                    fi
-                    
-                    if ! command -v mvn &> /dev/null; then
-                        echo "Maven is not available in PATH"
-                        echo "Current PATH: ${PATH}"
+                    # Verify Maven installation
+                    if ! JAVA_HOME="${JAVA_HOME}" mvn -version > /dev/null 2>&1; then
+                        echo "Maven verification failed"
                         exit 1
                     fi
                 '''
@@ -94,7 +81,7 @@ pipeline {
                     echo "JAVA_HOME=${JAVA_HOME}"
                     echo "PATH=${PATH}"
                     
-                    mvn clean compile
+                    JAVA_HOME="${JAVA_HOME}" mvn clean compile
                 '''
             }
         }
@@ -104,7 +91,7 @@ pipeline {
                 sh '''
                     export JAVA_HOME="${JAVA_HOME}"
                     export PATH="${JAVA_HOME}/bin:${PATH}"
-                    mvn test
+                    JAVA_HOME="${JAVA_HOME}" mvn test
                 '''
             }
             post {
