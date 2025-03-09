@@ -108,6 +108,19 @@ pipeline {
                                 ]
                             ]
                     
+                    // New HTML publisher configuration
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: false,
+                        icon: '',
+                        keepAll: false,
+                        reportDir: 'target/cucumber-reports',
+                        reportFiles: 'cucumber.html',
+                        reportName: 'HTML Report',
+                        reportTitles: '',
+                        useWrapperFileDirectly: true
+                    ])
+                    
                     // Publish Cucumber HTML reports (alternative format)
                     publishHTML([
                         allowMissing: false,

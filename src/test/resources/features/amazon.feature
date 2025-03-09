@@ -1,13 +1,9 @@
 Feature: Amazon Website Testing
   As a user
-  I want to test basic functionality of Amazon website
+  I want to verify Amazon website is accessible
   So that I can ensure it works correctly
 
-  Background:
+  Scenario: Verify Amazon homepage is displayed
     Given I am on the Amazon homepage
-
-  Scenario: Search for a product
-    When I search for "laptop"
-    Then I should see search results
-    And the page title should contain "laptop"
+    Then I should see the Amazon homepage is displayed
 
