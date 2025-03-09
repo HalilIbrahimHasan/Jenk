@@ -1,8 +1,7 @@
 package stepdefinitions;
 
+import java.time.Duration;
 
-
-import java.time.*;
 import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -15,19 +14,20 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
+import io.cucumber.java.Scenario;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-
-import static org.bouncycastle.oer.its.template.ieee1609dot2.basetypes.Ieee1609Dot2BaseTypes.Duration;
+import utils.TestUtils;
 
 public class AmazonSteps {
     private WebDriver driver;
     private WebDriverWait wait;
+    private Scenario scenario;
 
     @Before
-    public void setup() {
-
+    public void setup(Scenario scenario) {
+        this.scenario = scenario;
         
         // Configure Chrome options
         ChromeOptions options = new ChromeOptions();
@@ -38,12 +38,18 @@ public class AmazonSteps {
         // Initialize ChromeDriver with options
         driver = new ChromeDriver(options);
         driver.manage().window().maximize();
-        driver.manage().timeouts();
-
+        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
     }
 
     @After
-    public void tearDown() {
+    public void tearDown(Scenario scenario) {
+        if (scenario.isFailed()) {
+            // Take screenshot if scenario fails
+            String screenshotName = scenario.getName().replaceAll(" ", "_");
+            String screenshotPath = TestUtils.captureScreenshot(driver, screenshotName);
+            scenario.attach(screenshotPath, "image/png", "Screenshot on Failure");
+        }
+        
         if (driver != null) {
             driver.quit();
         }
@@ -64,16 +70,22 @@ public class AmazonSteps {
 
     @Then("I should see search results")
     public void iShouldSeeSearchResults() {
-       }
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("[data-component-type='s-search-result']")));
+        Assert.assertTrue("No search results found", 
+            driver.findElements(By.cssSelector("[data-component-type='s-search-result']")).size() > 0);
+    }
 
     @Then("the page title should contain {string}")
     public void thePageTitleShouldContain(String text) {
-
+        Assert.assertTrue("Title does not contain expected text",
+            driver.getTitle().toLowerCase().contains(text.toLowerCase()));
     }
 
     @When("I click on the first product")
     public void iClickOnTheFirstProduct() {
-
+        WebElement firstProduct = wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("[data-component-type='s-search-result'] h2 a")));
+        firstProduct.click();
     }
 
     @When("I add the product to cart")
