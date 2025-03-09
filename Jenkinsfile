@@ -1,7 +1,24 @@
 pipeline {
     agent any
     
+    environment {
+        PATH = "/opt/homebrew/bin:/usr/local/bin:${PATH}"
+        JAVA_HOME = "/Library/Java/JavaVirtualMachines/jdk-11.jdk/Contents/Home"
+        MAVEN_HOME = "/opt/homebrew/Cellar/maven/3.9.6"
+    }
+    
     stages {
+        stage('Setup') {
+            steps {
+                sh '''
+                    echo "PATH = ${PATH}"
+                    echo "JAVA_HOME = ${JAVA_HOME}"
+                    java -version
+                    mvn -version
+                '''
+            }
+        }
+        
         stage('Checkout') {
             steps {
                 checkout scm
@@ -10,13 +27,19 @@ pipeline {
         
         stage('Build') {
             steps {
-                sh 'mvn clean compile'
+                sh '''
+                    export PATH="/opt/homebrew/bin:/usr/local/bin:${PATH}"
+                    mvn clean compile
+                '''
             }
         }
         
         stage('Test') {
             steps {
-                sh 'mvn test'
+                sh '''
+                    export PATH="/opt/homebrew/bin:/usr/local/bin:${PATH}"
+                    mvn test
+                '''
             }
             post {
                 always {
