@@ -10,19 +10,16 @@ pipeline {
         stage('Setup') {
             steps {
                 sh '''
-                    # Ensure Homebrew is available and in PATH
-                    if ! command -v brew &> /dev/null; then
-                        echo "Homebrew not found. Installing Homebrew..."
-                        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-                        echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-                        eval "$(/opt/homebrew/bin/brew shellenv)"
-                    fi
+                    # Update Homebrew
+                    brew update
                     
                     # Install Java 11 if not present
                     if [ ! -d "${JAVA_HOME}" ]; then
                         echo "Installing Java 11..."
-                        brew tap homebrew/cask-versions
-                        brew install --cask temurin@11
+                        brew install --cask temurin@11 || brew upgrade --cask temurin@11
+                        
+                        # Wait for installation to complete
+                        sleep 5
                         
                         # Verify Java installation
                         if [ ! -d "${JAVA_HOME}" ]; then
@@ -50,14 +47,25 @@ pipeline {
                     export PATH="${JAVA_HOME}/bin:${PATH}"
                     
                     echo "Java version:"
-                    java -version
+                    java -version || true
+                    
+                    echo "Java Home:"
+                    echo "${JAVA_HOME}"
+                    ls -la "${JAVA_HOME}/bin/java" || true
                     
                     echo "Maven version:"
-                    mvn -version
+                    mvn -version || true
                     
                     # Verify all required tools are available
-                    if ! command -v java &> /dev/null || ! command -v mvn &> /dev/null; then
-                        echo "Required tools are missing"
+                    if ! command -v java &> /dev/null; then
+                        echo "Java is not available in PATH"
+                        echo "Current PATH: ${PATH}"
+                        exit 1
+                    fi
+                    
+                    if ! command -v mvn &> /dev/null; then
+                        echo "Maven is not available in PATH"
+                        echo "Current PATH: ${PATH}"
                         exit 1
                     fi
                 '''
