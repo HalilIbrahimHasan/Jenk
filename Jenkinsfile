@@ -2,18 +2,34 @@ pipeline {
     agent any
     
     environment {
-        PATH = "/opt/homebrew/bin:/usr/local/bin:${PATH}"
-        JAVA_HOME = "/Library/Java/JavaVirtualMachines/jdk-11.jdk/Contents/Home"
-        MAVEN_HOME = "/opt/homebrew/Cellar/maven/3.9.6"
+        JAVA_HOME = '/Library/Java/JavaVirtualMachines/temurin-11.jdk/Contents/Home'
+        PATH = "${JAVA_HOME}/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}"
     }
     
     stages {
         stage('Setup') {
             steps {
                 sh '''
-                    echo "PATH = ${PATH}"
-                    echo "JAVA_HOME = ${JAVA_HOME}"
+                    # Install Java 11 if not present
+                    if [ ! -d "${JAVA_HOME}" ]; then
+                        echo "Installing Java 11..."
+                        brew install --cask temurin11
+                    fi
+                    
+                    # Install Maven if not present
+                    if ! command -v mvn &> /dev/null; then
+                        echo "Installing Maven..."
+                        brew install maven
+                    fi
+                    
+                    # Export environment variables
+                    export JAVA_HOME="${JAVA_HOME}"
+                    export PATH="${JAVA_HOME}/bin:${PATH}"
+                    
+                    echo "Java version:"
                     java -version
+                    
+                    echo "Maven version:"
                     mvn -version
                 '''
             }
@@ -28,7 +44,8 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
-                    export PATH="/opt/homebrew/bin:/usr/local/bin:${PATH}"
+                    export JAVA_HOME="${JAVA_HOME}"
+                    export PATH="${JAVA_HOME}/bin:${PATH}"
                     mvn clean compile
                 '''
             }
@@ -37,7 +54,8 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    export PATH="/opt/homebrew/bin:/usr/local/bin:${PATH}"
+                    export JAVA_HOME="${JAVA_HOME}"
+                    export PATH="${JAVA_HOME}/bin:${PATH}"
                     mvn test
                 '''
             }
