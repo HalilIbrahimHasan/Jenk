@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         JAVA_HOME = '/Users/selma/java/temurin-11'
-        PATH = "${JAVA_HOME}/Contents/Home/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}"
+        PATH = "${JAVA_HOME}/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}"
     }
     
     stages {
@@ -21,6 +21,7 @@ pipeline {
                         # Download and extract Temurin JDK 11
                         curl -L -o temurin11.tar.gz https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.26%2B4/OpenJDK11U-jdk_aarch64_mac_hotspot_11.0.26_4.tar.gz
                         tar xzf temurin11.tar.gz
+                        rm -rf temurin-11
                         mv jdk-11.0.26+4 temurin-11
                         rm temurin11.tar.gz
                         
@@ -28,6 +29,10 @@ pipeline {
                         export JAVA_HOME="/Users/selma/java/temurin-11"
                         export PATH="${JAVA_HOME}/bin:${PATH}"
                     fi
+                    
+                    # Print directory structure for debugging
+                    echo "Java directory structure:"
+                    ls -R "${JAVA_HOME}"
                     
                     # Install Maven if not present using Homebrew
                     if ! command -v mvn &> /dev/null; then
@@ -39,15 +44,23 @@ pipeline {
                     export JAVA_HOME="${JAVA_HOME}"
                     export PATH="${JAVA_HOME}/bin:${PATH}"
                     
+                    echo "Environment variables:"
+                    echo "JAVA_HOME=${JAVA_HOME}"
+                    echo "PATH=${PATH}"
+                    
                     echo "Java version:"
+                    which java || true
                     java -version || true
                     
-                    echo "Java Home:"
-                    echo "${JAVA_HOME}"
-                    ls -la "${JAVA_HOME}/bin/java" || true
-                    
                     echo "Maven version:"
+                    which mvn || true
                     mvn -version || true
+                    
+                    # Verify Java installation
+                    if [ ! -f "${JAVA_HOME}/bin/java" ]; then
+                        echo "Java binary not found at expected location: ${JAVA_HOME}/bin/java"
+                        exit 1
+                    fi
                     
                     # Verify all required tools are available
                     if ! command -v java &> /dev/null; then
@@ -76,6 +89,11 @@ pipeline {
                 sh '''
                     export JAVA_HOME="${JAVA_HOME}"
                     export PATH="${JAVA_HOME}/bin:${PATH}"
+                    
+                    echo "Build environment:"
+                    echo "JAVA_HOME=${JAVA_HOME}"
+                    echo "PATH=${PATH}"
+                    
                     mvn clean compile
                 '''
             }
