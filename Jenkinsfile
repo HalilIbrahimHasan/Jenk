@@ -2,41 +2,34 @@ pipeline {
     agent any
     
     environment {
-        JAVA_HOME = '/Library/Java/JavaVirtualMachines/temurin-11.jdk/Contents/Home'
-        PATH = "${JAVA_HOME}/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}"
+        JAVA_HOME = '/Users/selma/java/temurin-11'
+        PATH = "${JAVA_HOME}/Contents/Home/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}"
     }
     
     stages {
         stage('Setup') {
             steps {
                 sh '''
-                    # Update Homebrew
-                    brew update
+                    # Create Java directory if it doesn't exist
+                    mkdir -p /Users/selma/java
                     
                     # Install Java 11 if not present
                     if [ ! -d "${JAVA_HOME}" ]; then
                         echo "Installing Java 11..."
-                        brew install --cask temurin@11 || brew upgrade --cask temurin@11
+                        cd /Users/selma/java
                         
-                        # Wait for installation to complete
-                        sleep 5
+                        # Download and extract Temurin JDK 11
+                        curl -L -o temurin11.tar.gz https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.26%2B4/OpenJDK11U-jdk_aarch64_mac_hotspot_11.0.26_4.tar.gz
+                        tar xzf temurin11.tar.gz
+                        mv jdk-11.0.26+4 temurin-11
+                        rm temurin11.tar.gz
                         
                         # Verify Java installation
-                        if [ ! -d "${JAVA_HOME}" ]; then
-                            echo "Java installation failed. Trying alternative path..."
-                            # Try to find the actual Java home
-                            POSSIBLE_JAVA_HOME=$(/usr/libexec/java_home -v 11 2>/dev/null)
-                            if [ -n "${POSSIBLE_JAVA_HOME}" ]; then
-                                export JAVA_HOME="${POSSIBLE_JAVA_HOME}"
-                                echo "Found Java 11 at: ${JAVA_HOME}"
-                            else
-                                echo "Failed to locate Java 11 installation"
-                                exit 1
-                            fi
-                        fi
+                        export JAVA_HOME="/Users/selma/java/temurin-11"
+                        export PATH="${JAVA_HOME}/bin:${PATH}"
                     fi
                     
-                    # Install Maven if not present
+                    # Install Maven if not present using Homebrew
                     if ! command -v mvn &> /dev/null; then
                         echo "Installing Maven..."
                         brew install maven
